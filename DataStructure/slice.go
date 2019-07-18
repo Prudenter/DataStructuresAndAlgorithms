@@ -14,6 +14,7 @@ import "C" // 添加头文件,导入C代码
 
 import (
 	"fmt"
+	"runtime"
 	"unsafe"
 )
 
@@ -41,7 +42,7 @@ func (s *Slice) Create(l int, c int, Data ...int) {
 		return
 	}
 
-	// 申请内存空间,单位:字节,返回值:void *类型,不能参与运算,s.Data是一个地址值
+	// 申请内存空间,单位:字节,返回值:void *类型,不能参与运算,s.Data是内存空间的首地址值
 	s.Data = C.malloc(C.size_t(c) * 8)
 	// 初始化长度和容量
 	s.Len = l
@@ -88,6 +89,7 @@ func (s *Slice) Append(Data ...int) {
 		// 更新容量
 		s.Cap *= 2
 	}
+	// 将s.Data转换成可以计算的数值
 	p := uintptr(s.Data)
 	// 偏移p到结尾处
 	p += uintptr(s.Len) * 8
@@ -101,15 +103,17 @@ func (s *Slice) Append(Data ...int) {
 }
 
 /*
-	根据切片元素获取下标
+	根据下标获取切片元素
 */
 func (s *Slice) GetData(index int) int {
+	// 容错校验
 	if s == nil {
 		return -1
 	}
 	if index < 0 || index >= s.Len {
 		return -1
 	}
+	// 将s.Data转换成可以计算的数值
 	p := uintptr(s.Data)
 	// 偏移p到index指定的元素位置
 	p += uintptr(index) * TAG
@@ -121,9 +125,11 @@ func (s *Slice) GetData(index int) int {
 	已知元素,返回下标
 */
 func (s *Slice) SearchData(data int) int {
+	// 容错校验
 	if s == nil {
 		return -1
 	}
+	// 将s.Data转换成可以计算的数值
 	p := uintptr(s.Data)
 	for i := 0; i < s.Len; i++ {
 		if *(*int)(unsafe.Pointer(p)) == data {
@@ -132,6 +138,91 @@ func (s *Slice) SearchData(data int) int {
 		p += TAG
 	}
 	return -1
+}
+
+/*
+	根据下标删除切片元素
+*/
+func (s *Slice) Delete(index int) {
+	// 容错校验
+	if s == nil {
+		return
+	}
+	if index < 0 || index >= s.Len {
+		return
+	}
+	// 将s.Data转换成可以计算的数值
+	p := uintptr(s.Data)
+	// 偏移p到index指定的元素位置
+	p += uintptr(index) * TAG
+	// 定义变量记录p指代的元素的下一个元素
+	afterP := p
+	// 循环从index到s.Len,依次完成后一个元素给前一个元素赋值
+	for i := index; i < s.Len; i++ {
+		afterP += TAG
+		*(*int)(unsafe.Pointer(p)) = *(*int)(unsafe.Pointer(afterP))
+		p += TAG
+	}
+	// 修改s.Len,去除一个元素
+	s.Len -= 1
+}
+
+/*
+	根据index向切片中插入数据
+*/
+func (s *Slice) Insert(data int, index int) {
+	// 容错校验
+	if s == nil || s.Data == nil {
+		return
+	}
+	if index < 0 || index > s.Len {
+		return
+	}
+	// 如果插入的index在切片结尾
+	if index == s.Len {
+		s.Append(data)
+		return
+	}
+	// 判断是否需要扩容
+	for s.Len+1 > s.Cap {
+		// 扩展容量为原来的2倍,存贮新的内存地址
+		s.Data = C.realloc(s.Data, C.size_t(s.Cap)*2*8)
+		// 更新容量
+		s.Cap *= 2
+	}
+
+	// 将s.Data转换成可以计算的数值
+	p := uintptr(s.Data)
+	// 偏移p到index指定的元素位置
+	p += uintptr(index) * TAG
+	// 获取插入元素完成后的最后一个元素的位置
+	temp := uintptr(s.Data) + uintptr(s.Len)*TAG
+	// 循环将index之后的元素依次后移--前一个元素给后一个元素赋值
+	for i := s.Len; i > index; i-- {
+		*(*int)(unsafe.Pointer(temp)) = *(*int)(unsafe.Pointer(temp - TAG))
+		temp -= TAG
+	}
+	// 循环结束后,将要插入的数据写入p对应的内存中
+	*(*int)(unsafe.Pointer(p)) = data
+	// 修改s.len
+	s.Len++
+}
+
+// 定义销毁切片的方法
+func (s *Slice) Destory() {
+	// 容错校验
+	if s == nil || s.Data == nil {
+		return
+	}
+	C.free(s.Data)
+	// 将当前内存空间置空,驱使GC工作
+	s.Data = nil
+	s.Len = 0
+	s.Cap = 0
+	s = nil
+
+	// 手动调用GC
+	runtime.GC()
 }
 
 func main() {
@@ -153,4 +244,19 @@ func main() {
 	// 给定元素,获取下标值
 	idx := slice.SearchData(8)
 	fmt.Println("下标:", idx)
+
+	//删除元素
+	slice.Delete(5)
+	slice.Print()
+	fmt.Printf("长度:%d,容量:%d\n", slice.Len, slice.Cap)
+
+	// 插入元素
+	slice.Insert(666, 9)
+	slice.Print()
+	fmt.Printf("长度:%d,容量:%d\n", slice.Len, slice.Cap)
+
+	// 销毁切片
+	fmt.Println("销毁切片:")
+	slice.Destory()
+	slice.Print()
 }
