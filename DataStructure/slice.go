@@ -11,6 +11,7 @@ package main
 #include <stdlib.h>
 */
 import "C" // 添加头文件,导入C代码
+
 import (
 	"fmt"
 	"unsafe"
@@ -69,10 +70,87 @@ func (s *Slice) Print() {
 		fmt.Print(*(*int)(unsafe.Pointer(p)), " ")
 		p += TAG
 	}
+	fmt.Println()
+}
+
+/*
+	定义添加切片元素的方法
+*/
+func (s *Slice) Append(Data ...int) {
+	// 容错校验
+	if s == nil {
+		return
+	}
+	// 判断是否需要扩容
+	for len(Data)+s.Len > s.Cap {
+		// 扩展容量为原来的2倍,存贮新的内存地址
+		s.Data = C.realloc(s.Data, C.size_t(s.Cap)*2*8)
+		// 更新容量
+		s.Cap *= 2
+	}
+	p := uintptr(s.Data)
+	// 偏移p到结尾处
+	p += uintptr(s.Len) * 8
+	// 循环将Data中的数据存入内存中
+	for _, v := range Data {
+		*(*int)(unsafe.Pointer(p)) = v
+		p += TAG
+	}
+	// 修改len
+	s.Len += len(Data)
+}
+
+/*
+	根据切片元素获取下标
+*/
+func (s *Slice) GetData(index int) int {
+	if s == nil {
+		return -1
+	}
+	if index < 0 || index >= s.Len {
+		return -1
+	}
+	p := uintptr(s.Data)
+	// 偏移p到index指定的元素位置
+	p += uintptr(index) * TAG
+	// 获取数据并返回
+	return *(*int)(unsafe.Pointer(p))
+}
+
+/*
+	已知元素,返回下标
+*/
+func (s *Slice) SearchData(data int) int {
+	if s == nil {
+		return -1
+	}
+	p := uintptr(s.Data)
+	for i := 0; i < s.Len; i++ {
+		if *(*int)(unsafe.Pointer(p)) == data {
+			return i
+		}
+		p += TAG
+	}
+	return -1
 }
 
 func main() {
 	slice := new(Slice)
+	// 创建切片
 	slice.Create(5, 5, 1, 2, 3, 4, 5)
+	// 打印切片
+	//slice.Print()
+
+	// 添加元素
+	slice.Append(6, 7, 8, 9, 10)
 	slice.Print()
+	fmt.Printf("长度:%d,容量:%d\n", slice.Len, slice.Cap)
+
+	// 获取元素
+	ret := slice.GetData(1)
+	fmt.Println("ret=", ret)
+
+	// 给定元素,获取下标值
+	idx := slice.SearchData(8)
+	fmt.Println("下标:", idx)
 }
