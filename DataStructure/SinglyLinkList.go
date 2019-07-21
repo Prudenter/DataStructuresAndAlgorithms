@@ -72,7 +72,7 @@ func (node *LinkNode) Print2() {
 func main() {
 	list := new(LinkNode)
 	// 创建链表
-	list.Create(1, 2, 3, 4, 5)
+	list.Create(1, 2, 3, 4, 5, 6)
 	// 打印链表
 	// 递归法
 	list.Print1()
