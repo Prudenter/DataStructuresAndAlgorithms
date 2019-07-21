@@ -69,6 +69,86 @@ func (node *LinkNode) Print2() {
 	}
 }
 
+// 获取链表的长度
+func (node *LinkNode) Length() int {
+	if node == nil {
+		return -1
+	}
+	// 定义一个计数器
+	i := 0
+	// 循环统计链表中数据结点的个数
+	for node.Next != nil {
+		//后移node结点
+		node = node.Next
+		i++
+	}
+	return i
+}
+
+// 插入链表结点--头插法
+func (node *LinkNode) InsertByHead(data interface{}) {
+	if node == nil || data == nil {
+		return
+	}
+	// 创建新结点, 初始化
+	newNode := new(LinkNode)
+	newNode.Data = data
+	newNode.Next = nil
+
+	// 将新结点的下一个结点,赋值为 原链表的第一个结点(node.Next)
+	newNode.Next = node.Next
+
+	// 将头结点的下一个结点赋值为新结点
+	node.Next = newNode
+}
+
+// 插入链表结点--头插法
+func (node *LinkNode) InsertByTail(data interface{}) {
+	if node == nil || data == nil {
+		return
+	}
+	// 创建新结点, 初始化
+	newNode := new(LinkNode)
+	newNode.Data = data
+	newNode.Next = nil
+
+	// 找到原链表的最后一个结点
+	for node.Next != nil {
+		node = node.Next
+	}
+	// 将新结点设置为尾结点
+	node.Next = newNode
+}
+
+// 插入链表结点--按位置插
+func (node *LinkNode) InsertByIndex(data interface{}, index int) {
+	if node == nil || data == nil {
+		return
+	}
+	if index < 0 || index > node.Length() {
+		return
+	}
+	// 如果插入位置在尾部
+	if index == node.Length() {
+		node.InsertByTail(data)
+		return
+	}
+
+	// 创建新结点
+	newNode := new(LinkNode)
+	newNode.Data = data
+	newNode.Next = nil
+
+	// 找寻带插入位置
+	for i := 0; i < index-1; i++ {
+		node = node.Next
+	}
+	// 将新结点指向node的下一个结点
+	newNode.Next = node.Next
+	// 将node结点指向newnode
+	node.Next = newNode
+}
+
 func main() {
 	list := new(LinkNode)
 	// 创建链表
@@ -79,4 +159,25 @@ func main() {
 	fmt.Println()
 	// 循环法
 	list.Print2()
+	fmt.Println()
+
+	// 获取链表长度
+	ret := list.Length()
+	fmt.Println("长度:", ret)
+
+	// 插入链表数据
+	// 头插法
+	list.InsertByHead(666)
+	list.Print1()
+	fmt.Println()
+
+	// 尾插法
+	list.InsertByTail(777)
+	list.Print1()
+	fmt.Println()
+
+	// 按位置插入
+	list.InsertByIndex(888, 8)
+	list.Print1()
+	fmt.Println()
 }
