@@ -149,6 +149,58 @@ func (node *LinkNode) InsertByIndex(data interface{}, index int) {
 	node.Next = newNode
 }
 
+// 单向链表逆序
+func (node *LinkNode) reverse1() *LinkNode {
+	fmt.Println(111111111)
+	// node=head  prevNode=p1  nextnode=p2
+	// 容错校验
+	if node == nil {
+		return nil
+	}
+	// 记录当前结点
+	currentNode := node
+	// 记录当前结点的下一个结点
+	var nextNode *LinkNode
+
+	for node.Next != nil {
+		nextNode = node.Next
+		// 记录下一个结点的下一个结点
+		node.Next = nextNode.Next
+		// 逆序操作,将下一个结点指向当前结点
+		nextNode.Next = currentNode
+		// 后移当前结点到下一个结点,循环逆序链表
+		currentNode = nextNode
+	}
+	return nextNode
+}
+
+// 单向链表逆序
+func (node *LinkNode) reverse2() *LinkNode {
+	fmt.Println(222222222)
+	// 容错校验
+	if node == nil {
+		return nil
+	}
+	// 记录当前结点
+	currentNode := node
+	// 记录当前结点的下一个结点
+	nextNode := node.Next
+
+	for {
+		// 记录下一个结点的下一个结点
+		node.Next = nextNode.Next
+		// 逆序操作,将下一个结点指向当前结点
+		nextNode.Next = currentNode
+		// 后移当前结点到下一个结点,循环逆序链表
+		currentNode = nextNode
+		if node.Next == nil {
+			break
+		}
+		nextNode = node.Next
+	}
+	return nextNode
+}
+
 func main() {
 	list := new(LinkNode)
 	// 创建链表
@@ -165,19 +217,23 @@ func main() {
 	ret := list.Length()
 	fmt.Println("长度:", ret)
 
-	// 插入链表数据
-	// 头插法
-	list.InsertByHead(666)
-	list.Print1()
-	fmt.Println()
+	/*	// 插入链表数据
+		// 头插法
+		list.InsertByHead(666)
+		list.Print1()
+		fmt.Println()
 
-	// 尾插法
-	list.InsertByTail(777)
-	list.Print1()
-	fmt.Println()
+		// 尾插法
+		list.InsertByTail(777)
+		list.Print1()
+		fmt.Println()
 
-	// 按位置插入
-	list.InsertByIndex(888, 8)
-	list.Print1()
-	fmt.Println()
+		// 按位置插入
+		list.InsertByIndex(888, 8)
+		list.Print1()
+		fmt.Println()*/
+
+	//re := list.reverse1()
+	re := list.reverse2()
+	re.Print1()
 }
